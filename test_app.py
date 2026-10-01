@@ -260,7 +260,7 @@ class UniVaultSecurityTests(unittest.TestCase):
 
     def test_admin_change_password_dashboard_and_user_controls(self):
         conn=database.get_connection()
-        admin=conn.execute("SELECT id,password_hash,must_change_password,is_owner FROM users WHERE username='Sanjeet' COLLATE NOCASE").fetchone()
+        admin=conn.execute("SELECT id,password_hash,must_change_password,is_owner FROM users WHERE LOWER(username)='sanjeet'").fetchone()
         self.assertEqual(admin["is_owner"],1)
         original=(admin["password_hash"],admin["must_change_password"])
         test_admin_password="TemporaryAdminCheck987"
@@ -353,7 +353,7 @@ class UniVaultSecurityTests(unittest.TestCase):
 
     def test_admin_seed_is_hashed_and_not_reset(self):
         conn=database.get_connection()
-        row=conn.execute("SELECT password_hash,role,must_change_password,is_owner FROM users WHERE username='Sanjeet' COLLATE NOCASE").fetchone()
+        row=conn.execute("SELECT password_hash,role,must_change_password,is_owner FROM users WHERE LOWER(username)='sanjeet'").fetchone()
         self.assertIsNotNone(row)
         self.assertTrue(row["password_hash"].startswith("scrypt:"))
         self.assertEqual(row["role"],"admin")
@@ -365,7 +365,7 @@ class UniVaultSecurityTests(unittest.TestCase):
         conn.close()
         database.init_db()
         conn=database.get_connection()
-        current=conn.execute("SELECT password_hash,must_change_password FROM users WHERE username='Sanjeet' COLLATE NOCASE").fetchone()
+        current=conn.execute("SELECT password_hash,must_change_password FROM users WHERE LOWER(username)='sanjeet'").fetchone()
         self.assertEqual(current["password_hash"],old_hash)
         self.assertEqual(current["must_change_password"],old_change_status)
         conn.close()

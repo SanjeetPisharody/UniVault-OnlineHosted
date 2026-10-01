@@ -14,6 +14,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 import database
+import storage
+from dotenv import load_dotenv
+
+load_dotenv()
 
 try:
     from pypdf import PdfReader
@@ -239,7 +243,7 @@ def login():
             error = "Invalid username or password."
         else:
             conn = database.get_connection()
-            row = conn.execute("SELECT * FROM users WHERE username=? COLLATE NOCASE", (username,)).fetchone()
+            row = conn.execute("SELECT * FROM users WHERE LOWER(username)=LOWER(?)", (username,)).fetchone()
             conn.close()
             password_ok = check_password_hash(row["password_hash"] if row else DUMMY_PASSWORD_HASH, password)
             valid = bool(row and row["is_active"] and password_ok)
@@ -283,7 +287,7 @@ def register():
                              (name, username, generate_password_hash(password)))
                 conn.commit()
                 return redirect(url_for("login", registered="1"))
-            except sqlite3.IntegrityError:
+            except database.IntegrityError:
                 error = "That username is already in use."
             finally:
                 conn.close()
@@ -324,21 +328,7 @@ def upload_profile_photo():
     if extension not in allowed_extensions:
         return redirect(url_for("profile", photo_error="format"))
 
-    unique_name = (
-        f"user_{user['id']}_"
-        f"{int(time.time() * 1000)}_"
-        f"{secrets.token_hex(5)}."
-        f"{extension}"
-    )
-
-    filepath = os.path.join(
-        PROFILE_PHOTO_FOLDER,
-        unique_name
-    )
-
-    file.save(filepath)
-
-    photo_url = f"/static/uploads/profile_photos/{unique_name}"
+    photo_url = storage.upload_profile_photo_file(file, user["id"])
 
     conn = database.get_connection()
 
@@ -356,27 +346,8 @@ def upload_profile_photo():
     conn.close()
 
     # Remove previous profile photo.
-    if old and old["profile_photo"]:
-        old_photo = old["profile_photo"]
-
-        if old_photo.startswith(
-            "/static/uploads/profile_photos/"
-        ):
-            old_filename = os.path.basename(old_photo)
-
-            old_filepath = os.path.join(
-                PROFILE_PHOTO_FOLDER,
-                old_filename
-            )
-
-            if (
-                os.path.isfile(old_filepath)
-                and old_filepath != filepath
-            ):
-                try:
-                    os.remove(old_filepath)
-                except OSError:
-                    pass
+    if old and old["profile_photo"] and old["profile_photo"] != photo_url:
+        storage.delete_file(old["profile_photo"])
 
     return redirect(url_for("profile", photo_updated="1"))
 @app.route("/profile")
@@ -455,7 +426,7 @@ def delete_account():
     uid = current_user()["id"]
     # Retain submitted educational materials and their public contributor history.
     conn.execute("UPDATE materials SET uploader_user_id=NULL WHERE uploader_user_id=?", (uid,))
-    conn.execute("UPDATE materials SET upvotes_count=MAX(0,upvotes_count-1) WHERE id IN (SELECT material_id FROM material_upvotes WHERE user_id=?)", (uid,))
+    conn.execute("UPDATE materials SET upvotes_count=CASE WHEN upvotes_count>0 THEN upvotes_count-1 ELSE 0 END WHERE id IN (SELECT material_id FROM material_upvotes WHERE user_id=?)", (uid,))
     conn.execute("UPDATE reviews SET user_id=NULL, author_name='Former student' WHERE user_id=?", (uid,))
     conn.execute("DELETE FROM users WHERE id=?", (uid,))
     conn.commit(); conn.close(); session.clear()
@@ -658,7 +629,7 @@ def admin_user_action(user_id):
         conn.execute(
             """
             UPDATE materials
-            SET upvotes_count=MAX(0, upvotes_count-1)
+            SET upvotes_count=CASE WHEN upvotes_count>0 THEN upvotes_count-1 ELSE 0 END
             WHERE id IN (
                 SELECT material_id
                 FROM material_upvotes
@@ -713,9 +684,7 @@ def admin_material_action(material_id):
         if not row: conn.close(); return jsonify(error="Material not found."),404
         conn.execute("DELETE FROM materials WHERE id=?",(material_id,))
         path=row["file_url"] or ""
-        if path.startswith("/static/uploads/"):
-            filename=os.path.basename(path); target=os.path.join(UPLOAD_FOLDER,filename)
-            if os.path.isfile(target): os.remove(target)
+        storage.delete_file(path)
     else: conn.close(); return jsonify(error="Invalid action."),400
     conn.commit(); conn.close(); return jsonify(success=True)
 
@@ -801,13 +770,16 @@ def upload_material():
     if has_file:
         file=request.files["file"]
         if not allowed_file(file.filename): return jsonify(error="Unsupported file type."),400
-        filename=secure_filename(file.filename); unique=f"{int(time.time()*1000)}_{secrets.token_hex(5)}_{filename}"
-        path=os.path.join(UPLOAD_FOLDER,unique); file.save(path)
-        file_url=f"/static/uploads/{unique}"; ext=filename.rsplit(".",1)[1].upper(); file_type=ext
-        size=max(1,(os.path.getsize(path)+1023)//1024)
-        if file_type=="PDF" and PdfReader:
-            try: pages=len(PdfReader(path).pages)
-            except Exception: pages=0
+        try:
+            result = storage.upload_material_file(file)
+            file_url = result["file_url"]
+            file_type = result["file_type"]
+            size = result["file_size_kb"]
+            pages = result["page_count"]
+        except ValueError as e:
+            return jsonify(error=str(e)), 400
+        except Exception:
+            return jsonify(error="Failed to process and upload file."), 500
     elif not file_url:
         file_url="/api/materials/0/file"
     try: size=size or max(1,int(data.get("file_size_kb",1)))
@@ -831,11 +803,13 @@ def download_material_file(material_id):
     item=database.get_material_by_id(material_id)
     if not item: return jsonify(error="Material not found"),404
     path_value=item.get("file_url","")
-    if path_value.startswith(("https://", "http://")):
-        return redirect(path_value)
-    if path_value.startswith("/static/uploads/"):
-        filename=os.path.basename(path_value); path=os.path.join(UPLOAD_FOLDER,filename)
-        if os.path.isfile(path): return send_file(path,as_attachment=True,download_name=filename)
+    url = storage.get_file_download_url(path_value, as_attachment=True)
+    if url:
+        if url.startswith(("http://", "https://")):
+            return redirect(url)
+        elif url.startswith("/static/uploads/"):
+            filename=os.path.basename(url); path=os.path.join(UPLOAD_FOLDER,filename)
+            if os.path.isfile(path): return send_file(path,as_attachment=True,download_name=filename)
     # Read-only compatibility for legacy files that were already stored as SQLite BLOBs.
     file_data,stored_type=database.get_material_file_data(material_id)
     if file_data:
@@ -924,6 +898,20 @@ def debug_material_file(material_id):
     file_data,stored_type=database.get_material_file_data(material_id)
     if not file_data: return jsonify(material_id=material_id,has_file=False),404
     return jsonify(material_id=material_id,has_file=True,file_type=stored_type,file_size_bytes=len(file_data),file_size_kb=round(len(file_data)/1024,2))
+
+
+@app.errorhandler(404)
+def not_found_error(error):
+    if request.path.startswith("/api/"):
+        return jsonify(error="Not found."), 404
+    return "Page not found.", 404
+
+
+@app.errorhandler(500)
+def internal_error(error):
+    if request.path.startswith("/api/"):
+        return jsonify(error="Internal server error."), 500
+    return "Internal server error.", 500
 
 
 if __name__ == "__main__":

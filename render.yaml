@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: univault
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: UNIVAULT_SECRET_KEY
+        generateValue: true
+      - key: UNIVAULT_HTTPS
+        value: "true"
+      # Note: Set DATABASE_URL and R2_* environment variables in the Render dashboard.
