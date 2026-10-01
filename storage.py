@@ -1,4 +1,4 @@
-"""Cloudflare R2 and local filesystem storage abstraction for UniVault."""
+"""Supabase Storage and local filesystem storage abstraction for UniVault."""
 import logging
 import os
 import secrets
@@ -10,51 +10,50 @@ from werkzeug.utils import secure_filename
 
 logger = logging.getLogger("univault.storage")
 
-# Optional boto3 import
+# Supabase Client import
 try:
-    import boto3
-    from botocore.config import Config
-    from botocore.exceptions import ClientError
+    from supabase import create_client
+    from storage3.types import FileOptions, URLOptions
 except ImportError:
-    boto3 = None
-    Config = None
-    ClientError = Exception
+    create_client = None
+    FileOptions = None
+    URLOptions = None
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 LOCAL_UPLOAD_FOLDER = os.path.join(PROJECT_ROOT, "static", "uploads")
+DEFAULT_BUCKET = "univault-files"
 
 
-def get_r2_config():
-    """Retrieve Cloudflare R2 credentials from environment variables."""
+def get_supabase_storage_config():
+    """Retrieve Supabase Storage configuration from environment variables."""
     return {
-        "account_id": os.environ.get("R2_ACCOUNT_ID", "").strip(),
-        "access_key": os.environ.get("R2_ACCESS_KEY_ID", "").strip(),
-        "secret_key": os.environ.get("R2_SECRET_ACCESS_KEY", "").strip(),
-        "bucket_name": os.environ.get("R2_BUCKET_NAME", "").strip(),
-        "public_base_url": os.environ.get("R2_PUBLIC_BASE_URL", "").strip().rstrip("/"),
+        "url": os.environ.get("SUPABASE_URL", "").strip().rstrip("/"),
+        "key": os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip(),
+        "bucket": os.environ.get("SUPABASE_STORAGE_BUCKET", "").strip() or DEFAULT_BUCKET,
     }
 
 
-def is_r2_configured():
-    """Check if all required Cloudflare R2 credentials are provided."""
-    cfg = get_r2_config()
-    return bool(cfg["account_id"] and cfg["access_key"] and cfg["secret_key"] and cfg["bucket_name"])
+def is_supabase_storage_configured():
+    """Check if all required Supabase Storage credentials are provided."""
+    cfg = get_supabase_storage_config()
+    return bool(cfg["url"] and cfg["key"] and cfg["bucket"])
 
 
-def get_s3_client():
-    """Create and return an S3-compatible client for Cloudflare R2."""
-    if not boto3:
-        raise RuntimeError("boto3 is required for Cloudflare R2 storage but is not installed.")
-    cfg = get_r2_config()
-    endpoint_url = f"https://{cfg['account_id']}.r2.cloudflarestorage.com"
-    return boto3.client(
-        "s3",
-        endpoint_url=endpoint_url,
-        aws_access_key_id=cfg["access_key"],
-        aws_secret_access_key=cfg["secret_key"],
-        region_name="auto",
-        config=Config(signature_version="s3v4") if Config else None,
-    )
+def get_supabase_storage_client():
+    """Create and return a Supabase client configured with the service-role key."""
+    if not create_client:
+        raise RuntimeError("supabase Python package is required for Supabase Storage but is not installed.")
+    cfg = get_supabase_storage_config()
+    if not (cfg["url"] and cfg["key"]):
+        raise RuntimeError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.")
+    return create_client(cfg["url"], cfg["key"])
+
+
+def get_storage_bucket():
+    """Get the configured Supabase Storage bucket instance."""
+    client = get_supabase_storage_client()
+    bucket_name = get_supabase_storage_config()["bucket"]
+    return client.storage.from_(bucket_name)
 
 
 def validate_pdf_content(file_bytes):
@@ -74,14 +73,15 @@ def validate_pdf_content(file_bytes):
 
 def upload_material_file(file_storage, custom_filename=None):
     """
-    Upload a study material file (typically PDF) to R2 (if configured) or local storage.
-    
+    Upload a study material file (typically PDF) to Supabase Storage (if configured)
+    or local storage fallback.
+
     Returns a dict with:
-        - file_url: the path/key or public URL to store in the database
+        - file_url: the storage object path (e.g. 'materials/...') or local URL
         - file_type: extension string (e.g. 'PDF')
         - file_size_kb: size in KB
         - page_count: number of pages if PDF
-        - is_cloud: boolean indicating whether it was stored in R2
+        - is_cloud: boolean indicating whether it was stored in Supabase Storage
     """
     original_name = custom_filename or getattr(file_storage, "filename", "document.pdf")
     safe_name = secure_filename(original_name) or "document.pdf"
@@ -109,30 +109,26 @@ def upload_material_file(file_storage, custom_filename=None):
 
     unique_id = f"{int(time.time() * 1000)}_{secrets.token_hex(4)}"
 
-    if is_r2_configured():
-        cfg = get_r2_config()
-        object_key = f"materials/{unique_id}/{safe_name}"
-        s3 = get_s3_client()
-        content_type = getattr(file_storage, "content_type", None) or "application/pdf" if ext == "PDF" else "application/octet-stream"
+    if is_supabase_storage_configured():
+        cfg = get_supabase_storage_config()
+        object_path = f"materials/{unique_id}/{safe_name}"
+        content_type = getattr(file_storage, "content_type", None) or ("application/pdf" if ext == "PDF" else "application/octet-stream")
 
         try:
-            s3.put_object(
-                Bucket=cfg["bucket_name"],
-                Key=object_key,
-                Body=file_bytes,
-                ContentType=content_type,
-                Metadata={
-                    "original_filename": safe_name,
-                    "uploaded_at": str(int(time.time())),
-                },
+            bucket = get_storage_bucket()
+            upload_kwargs = {"content-type": content_type}
+            bucket.upload(
+                path=object_path,
+                file=file_bytes,
+                file_options=upload_kwargs,
             )
-            logger.info("Successfully uploaded %s to R2 (%s bytes)", object_key, len(file_bytes))
+            logger.info("Successfully uploaded %s to Supabase Storage bucket %s (%s bytes)", object_path, cfg["bucket"], len(file_bytes))
         except Exception as e:
-            logger.error("Failed to upload file to Cloudflare R2: %s", str(e))
-            raise RuntimeError("Cloud storage upload failed.") from e
+            logger.error("Failed to upload file to Supabase Storage: %s", str(e))
+            raise RuntimeError(f"Cloud storage upload failed: {str(e)}") from e
 
         return {
-            "file_url": object_key,
+            "file_url": object_path,
             "file_type": ext,
             "file_size_kb": file_size_kb,
             "page_count": page_count,
@@ -157,8 +153,8 @@ def upload_material_file(file_storage, custom_filename=None):
 
 def upload_profile_photo_file(file_storage, user_id):
     """
-    Upload a user profile photo to R2 (if configured) or local storage.
-    Returns the URL/path to store in users.profile_photo.
+    Upload a user profile photo to Supabase Storage (if configured) or local storage.
+    Returns the URL or object path to store in users.profile_photo.
     """
     original_name = getattr(file_storage, "filename", "avatar.jpg")
     safe_name = secure_filename(original_name) or "avatar.jpg"
@@ -167,23 +163,24 @@ def upload_profile_photo_file(file_storage, user_id):
     file_bytes = file_storage.read() if hasattr(file_storage, "read") else bytes(file_storage)
     unique_id = f"user_{user_id}_{int(time.time() * 1000)}_{secrets.token_hex(4)}.{ext}"
 
-    if is_r2_configured():
-        cfg = get_r2_config()
-        object_key = f"profile_photos/{unique_id}"
-        s3 = get_s3_client()
+    if is_supabase_storage_configured():
+        cfg = get_supabase_storage_config()
+        object_path = f"profiles/{user_id}/{unique_id}"
         content_type = getattr(file_storage, "content_type", None) or f"image/{ext}"
 
-        s3.put_object(
-            Bucket=cfg["bucket_name"],
-            Key=object_key,
-            Body=file_bytes,
-            ContentType=content_type,
-        )
-
-        if cfg["public_base_url"]:
-            return f"{cfg['public_base_url']}/{object_key}"
-        # If no public base URL, store object key; get_file_download_url will generate signed URL
-        return object_key
+        try:
+            bucket = get_storage_bucket()
+            upload_kwargs = {"content-type": content_type}
+            bucket.upload(
+                path=object_path,
+                file=file_bytes,
+                file_options=upload_kwargs,
+            )
+            logger.info("Successfully uploaded profile photo %s to Supabase Storage bucket %s", object_path, cfg["bucket"])
+            return object_path
+        except Exception as e:
+            logger.error("Failed to upload profile photo to Supabase Storage: %s", str(e))
+            raise RuntimeError(f"Profile photo cloud upload failed: {str(e)}") from e
     else:
         # Local fallback
         target_dir = os.path.join(LOCAL_UPLOAD_FOLDER, "profile_photos")
@@ -194,12 +191,12 @@ def upload_profile_photo_file(file_storage, user_id):
         return f"/static/uploads/profile_photos/{unique_id}"
 
 
-def get_file_download_url(file_ref, as_attachment=False, download_name=None):
+def get_file_download_url(file_ref, as_attachment=False, download_name=None, expires_in=3600):
     """
     Resolve a stored file reference into an accessible URL.
     - If already an HTTP/HTTPS URL, returns it directly.
     - If a local /static/uploads/... path, returns it.
-    - If an R2 object key, returns a public URL or a secure presigned URL.
+    - If a Supabase Storage object path, generates a temporary signed URL.
     """
     if not file_ref:
         return None
@@ -212,49 +209,53 @@ def get_file_download_url(file_ref, as_attachment=False, download_name=None):
     if file_ref.startswith("/static/uploads/"):
         return file_ref
 
-    # R2 object key (e.g. 'materials/...' or 'profile_photos/...')
-    if is_r2_configured():
-        cfg = get_r2_config()
-        if cfg["public_base_url"]:
-            return f"{cfg['public_base_url']}/{file_ref}"
-
+    # Supabase Storage object path (e.g. 'materials/...' or 'profiles/...')
+    if is_supabase_storage_configured():
         try:
-            s3 = get_s3_client()
-            params = {
-                "Bucket": cfg["bucket_name"],
-                "Key": file_ref,
-            }
-            safe_download_name = download_name or os.path.basename(file_ref)
-            disp_type = "attachment" if as_attachment else "inline"
-            params["ResponseContentDisposition"] = f'{disp_type}; filename="{safe_download_name}"'
+            bucket = get_storage_bucket()
+            url_options = {}
+            if as_attachment:
+                if download_name:
+                    url_options["download"] = download_name
+                else:
+                    url_options["download"] = True
 
-            presigned_url = s3.generate_presigned_url(
-                "get_object",
-                Params=params,
-                ExpiresIn=3600,
+            resp = bucket.create_signed_url(
+                path=file_ref,
+                expires_in=expires_in,
+                options=url_options if url_options else None,
             )
-            return presigned_url
+
+            # Response is SignedUrlResponse which is dict-like with 'signedURL' or 'signedUrl'
+            signed_url = None
+            if isinstance(resp, dict):
+                signed_url = resp.get("signedURL") or resp.get("signedUrl")
+            elif hasattr(resp, "signed_url"):
+                signed_url = resp.signed_url
+            elif hasattr(resp, "signedURL"):
+                signed_url = resp.signedURL
+
+            return signed_url
         except Exception as e:
-            logger.error("Failed to generate presigned URL for %s: %s", file_ref, str(e))
+            logger.error("Failed to generate signed URL for Supabase object %s: %s", file_ref, str(e))
             return None
 
     return None
 
 
 def delete_file(file_ref):
-    """Safely delete a file from R2 or local storage."""
+    """Safely delete a file from Supabase Storage or local storage."""
     if not file_ref:
         return
 
-    # Check if R2 object key
-    if not file_ref.startswith(("http://", "https://", "/")) and is_r2_configured():
+    # Check if Supabase Storage object path
+    if not file_ref.startswith(("http://", "https://", "/")) and is_supabase_storage_configured():
         try:
-            cfg = get_r2_config()
-            s3 = get_s3_client()
-            s3.delete_object(Bucket=cfg["bucket_name"], Key=file_ref)
-            logger.info("Deleted %s from R2", file_ref)
+            bucket = get_storage_bucket()
+            bucket.remove([file_ref])
+            logger.info("Deleted %s from Supabase Storage", file_ref)
         except Exception as e:
-            logger.warning("Could not delete %s from R2: %s", file_ref, str(e))
+            logger.warning("Could not delete %s from Supabase Storage: %s", file_ref, str(e))
         return
 
     # Local file deletion
@@ -266,3 +267,27 @@ def delete_file(file_ref):
                 os.remove(full_path)
             except OSError:
                 pass
+
+
+def file_exists(file_ref):
+    """Check if a file exists in Supabase Storage or local storage."""
+    if not file_ref:
+        return False
+
+    if file_ref.startswith(("http://", "https://")):
+        return True
+
+    if file_ref.startswith("/static/uploads/"):
+        rel_path = file_ref.replace("/static/uploads/", "", 1)
+        full_path = os.path.join(LOCAL_UPLOAD_FOLDER, rel_path.replace("/", os.sep))
+        return os.path.isfile(full_path)
+
+    if is_supabase_storage_configured():
+        try:
+            bucket = get_storage_bucket()
+            return bucket.exists(file_ref)
+        except Exception as e:
+            logger.warning("Error checking if %s exists in Supabase Storage: %s", file_ref, str(e))
+            return False
+
+    return False

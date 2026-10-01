@@ -11,4 +11,5 @@ services:
         generateValue: true
       - key: UNIVAULT_HTTPS
         value: "true"
-      # Note: Set DATABASE_URL and R2_* environment variables in the Render dashboard.
+      # Note: Set DATABASE_URL, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
+      # and SUPABASE_STORAGE_BUCKET environment variables in the Render dashboard.
