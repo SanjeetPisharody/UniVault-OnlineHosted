@@ -1,0 +1,120 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<</Type/Catalog/Pages 2 0 R>>
+endobj
+2 0 obj
+<</Type/Pages/Kids[3 0 R]/Count 1>>
+endobj
+3 0 obj
+<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Contents 4 0 R/Resources<</Font<</F1 5 0 R/F2 6 0 R>>>>>>
+endobj
+4 0 obj
+<</Length 1647>>
+stream
+0.95 0.96 1.0 rg
+50 710 495 90 re f
+0.31 0.27 0.90 RG
+1.2 w
+50 710 495 90 re S
+BT
+/F1 9 Tf
+0.45 0.45 0.55 rg
+65 782 Td
+(UNIVAULT ACADEMIC PORTAL   -   VERIFIED STUDENT NOTES) Tj
+ET
+BT
+/F1 14 Tf
+0.08 0.08 0.20 rg
+65 760 Td
+(Engineering Mathematics III \(Transform Calculus & Four) Tj
+ET
+BT
+/F2 9 Tf
+0.30 0.30 0.42 rg
+65 740 Td
+(Course: MA-301  |  Engineering Mathematics III  |  Semester 3 \(2023\)) Tj
+ET
+BT
+/F2 9 Tf
+0.30 0.30 0.42 rg
+65 726 Td
+(VTU Karnataka  |  Applied Sciences & Mathematics  |  Lecture Notes) Tj
+ET
+0.75 0.75 0.82 RG
+0.6 w
+50 700 m 545 700 l S
+BT
+/F2 10 Tf
+0.12 0.12 0.20 rg
+50 678 Td
+14 TL
+ET
+BT
+/F1 10.5 Tf
+0.20 0.20 0.75 rg
+(LAPLACE TRANSFORMS STANDARD TABLE:) '
+ET
+BT
+/F2 10 Tf
+0.12 0.12 0.20 rg
+(- L{1} = 1/s) '
+(- L{t^n} = n! / s^{n+1}) '
+(- L{e^{at}} = 1 / \(s - a\)) '
+(- L{sin\(at\)} = a / \(s^2 + a^2\)) '
+(- L{cos\(at\)} = s / \(s^2 + a^2\)) '
+(- First Shifting Property: L{e^{at} * f\(t\)} = F\(s - a\)) '
+(- Convolution Theorem: L^{-1}{ F\(s\) * G\(s\) } = integral_0^t f\(u\) g\(t - u\) du) '
+() '
+ET
+BT
+/F1 10.5 Tf
+0.20 0.20 0.75 rg
+(FOURIER SERIES EXPANSION in \(-L, L\):) '
+ET
+BT
+/F2 10 Tf
+0.12 0.12 0.20 rg
+(f\(x\) = a_0/2 + sum_{n=1}^inf [ a_n cos\(n pi x / L\) + b_n sin\(n pi x / L\) ]) '
+(Euler's Formulae:) '
+(- a_0 = \(1/L\) * int_{-L}^L f\(x\) dx) '
+(- a_n = \(1/L\) * int_{-L}^L f\(x\) cos\(n pi x / L\) dx) '
+(- b_n = \(1/L\) * int_{-L}^L f\(x\) sin\(n pi x / L\) dx) '
+ET
+0.80 0.80 0.88 RG
+0.5 w
+50 52 m 545 52 l S
+BT
+/F2 8 Tf
+0.50 0.50 0.60 rg
+50 38 Td
+(UniVault Academic Sharing Portal  -  Free, Peer-Reviewed Educational Resource) Tj
+ET
+BT
+/F1 8 Tf
+0.50 0.50 0.60 rg
+490 38 Td
+(Page 1 / 1) Tj
+ET
+endstream
+endobj
+5 0 obj
+<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold>>
+endobj
+6 0 obj
+<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000015 00000 n 
+0000000060 00000 n 
+0000000111 00000 n 
+0000000232 00000 n 
+0000001929 00000 n 
+0000001997 00000 n 
+trailer
+<</Size 7/Root 1 0 R>>
+startxref
+2060
+%%EOF

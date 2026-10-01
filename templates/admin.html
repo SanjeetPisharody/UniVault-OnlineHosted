@@ -1,0 +1,54 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="csrf-token" content="{{ csrf_token }}"><title>Admin Dashboard · UniVault</title><script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="/static/css/atlas-pages.css"></head><body class="atlas-subpage atlas-admin-page min-h-screen bg-slate-950 text-slate-100"><main class="mx-auto max-w-7xl p-5 sm:p-9"><div class="flex items-center justify-between"><div><a href="/" class="font-bold text-indigo-300">UniVault</a><h1 class="mt-3 text-3xl font-extrabold">Admin Dashboard <span class="rounded-full bg-rose-500/20 px-2 py-1 text-xs text-rose-300">ADMIN</span></h1></div><a href="/profile" class="rounded-xl border border-slate-700 px-4 py-2">Profile</a></div>
+<div class="mt-7 grid grid-cols-2 gap-3 md:grid-cols-4">{% for key,label in [('total_materials','Materials'),('total_reviews','Reviews'),('total_downloads','Downloads'),('total_upvotes','Upvotes')] %}<div class="rounded-2xl border border-slate-800 bg-slate-900 p-5"><p class="text-sm text-slate-400">{{ label }}</p><p class="mt-2 text-2xl font-bold">{{ stats[key] }}</p></div>{% endfor %}</div>
+<section class="admin-create-section mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-5">
+<div class="mb-5"><h2 class="text-xl font-bold">Add an administrator</h2><p class="mt-1 text-sm text-slate-400">Create an administrator account. The new administrator will be asked to change this password at first sign-in.</p></div>
+<form id="adminCreateUserForm" class="grid gap-4 sm:grid-cols-2">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label class="block text-sm font-medium">Full name<input name="name" required maxlength="80" autocomplete="name" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5" placeholder="Administrator name"></label>
+<label class="block text-sm font-medium">Username<input name="username" required minlength="3" maxlength="32" pattern="[A-Za-z0-9._-]+" autocomplete="username" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5" placeholder="Choose a username"></label>
+<label class="block text-sm font-medium">Temporary password<input name="password" type="password" required minlength="10" maxlength="1024" autocomplete="new-password" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5" placeholder="At least 10 characters"></label>
+<label class="block text-sm font-medium">Confirm temporary password<input name="confirm_password" type="password" required minlength="10" maxlength="1024" autocomplete="new-password" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5" placeholder="Enter the password again"></label>
+<div class="flex flex-wrap items-center justify-between gap-3 sm:col-span-2"><p class="text-xs text-slate-400">Passwords require at least 10 characters, including a letter and a number.</p><button type="submit" class="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white">Create administrator</button></div>
+<p id="adminCreateStatus" class="hidden text-sm sm:col-span-2" role="status" aria-live="polite"></p>
+</form></section>
+<section class="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-5"><h2 class="text-xl font-bold">Manage users</h2><div class="mt-4 overflow-x-auto"><table class="w-full text-left text-sm"><thead class="text-slate-400"><tr><th class="p-2">User</th><th class="p-2">Role</th><th class="p-2">Status</th><th class="p-2">Actions</th></tr></thead><tbody>{% for u in users %}<tr class="border-t border-slate-800"><td class="p-2">{{ u.name }} <span class="text-slate-500">@{{ u.username }}</span></td><td class="p-2">{{ u.role }}{% if u.is_owner or u.username|lower == 'sanjeet' %}<span class="ml-2 rounded-full bg-amber-400/15 px-2 py-0.5 text-xs text-amber-300">Original admin</span>{% endif %}</td><td class="p-2">{{ 'Active' if u.is_active else 'Suspended' }}</td><td class="p-2 flex flex-wrap gap-2">{% if u.role=='student' %}<button data-user="{{u.id}}" data-action="promote" class="user-action rounded bg-indigo-600 px-2 py-1">Promote admin</button><button data-user="{{u.id}}" data-action="{{'activate' if not u.is_active else 'suspend'}}" class="user-action rounded border px-2 py-1">{{ 'Activate' if not u.is_active else 'Suspend' }}</button><button data-user="{{u.id}}" data-action="delete" class="user-action rounded bg-rose-700 px-2 py-1">Delete</button>{% elif u.id != user.id %}{% if u.is_owner or u.username|lower == 'sanjeet' %}<span class="text-xs text-slate-400">Protected account · no role controls</span>{% else %}<button data-user="{{u.id}}" data-action="demote" class="user-action rounded bg-amber-700 px-2 py-1">Revoke admin</button>{% endif %}{% endif %}</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-5"><h2 class="text-xl font-bold">Manage materials</h2><div class="mt-4 space-y-2">{% for m in materials %}<div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 py-3"><div><b>{{ m.title }}</b><p class="text-xs text-slate-400">{{ m.uploader_name }} · {{ m.status }}</p></div><div class="flex gap-2">{% if m.status!='approved' %}<button data-material="{{m.id}}" data-action="approve" class="material-action rounded bg-emerald-700 px-2 py-1 text-sm">Approve</button>{% endif %}<button data-material="{{m.id}}" data-action="reject" class="material-action rounded bg-amber-700 px-2 py-1 text-sm">Reject</button><button data-material="{{m.id}}" data-action="delete" class="material-action rounded bg-rose-700 px-2 py-1 text-sm">Remove</button></div></div>{% endfor %}</div></section>
+<section class="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-5"><h2 class="text-xl font-bold">Moderate reviews</h2><div class="mt-4 space-y-3">{% for review in reviews %}<article class="flex items-start justify-between gap-4 border-t border-slate-800 py-3"><div><b>{{ review.author_name }} · {{ review.rating }}/5</b><p class="text-xs text-slate-400">{{ review.material_title }}</p><p class="mt-1 text-sm">{{ review.comment }}</p></div><button data-review="{{review.id}}" class="review-delete rounded bg-rose-700 px-2 py-1 text-sm">Remove</button></article>{% else %}<p class="text-sm text-slate-400">No reviews to moderate.</p>{% endfor %}</div></section></main>
+<script>const csrf=document.querySelector('meta[name=csrf-token]').content;document.querySelectorAll('.user-action').forEach(b=>b.onclick=async()=>{if(['delete','demote','suspend'].includes(b.dataset.action)&&!confirm('Confirm this account change?'))return;const d=new FormData();d.set('action',b.dataset.action);const r=await fetch('/api/admin/users/'+b.dataset.user,{method:'POST',headers:{'X-CSRF-Token':csrf},body:d});const x=await r.json();if(!r.ok)alert(x.error||'Action failed');else location.reload()});document.querySelectorAll('.material-action').forEach(b=>b.onclick=async()=>{if(b.dataset.action==='delete'&&!confirm('Remove this material and its uploaded file?'))return;const r=await fetch('/api/admin/materials/'+b.dataset.material,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:b.dataset.action})});const x=await r.json();if(!r.ok)alert(x.error||'Action failed');else location.reload()});document.querySelectorAll('.review-delete').forEach(b=>b.onclick=async()=>{if(!confirm('Remove this review?'))return;const r=await fetch('/api/admin/reviews/'+b.dataset.review,{method:'DELETE',headers:{'X-CSRF-Token':csrf}});const x=await r.json();if(!r.ok)alert(x.error||'Action failed');else location.reload()});</script><script>
+const adminCreateForm = document.getElementById('adminCreateUserForm');
+if (adminCreateForm) {
+  adminCreateForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const status = document.getElementById('adminCreateStatus');
+    const button = adminCreateForm.querySelector('button[type="submit"]');
+    status.classList.remove('hidden');
+    status.textContent = 'Creating administrator account…';
+    button.disabled = true;
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': document.querySelector('meta[name=csrf-token]').content },
+        body: new FormData(adminCreateForm)
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        status.textContent = result.error || 'The administrator account could not be created.';
+        status.classList.add('text-rose-300');
+      } else {
+        status.classList.remove('text-rose-300');
+        status.classList.add('text-emerald-300');
+        status.textContent = 'Administrator account created. The new administrator must change the password at first sign-in.';
+        adminCreateForm.reset();
+        window.setTimeout(() => window.location.reload(), 900);
+      }
+    } catch (error) {
+      status.classList.remove('hidden');
+      status.classList.add('text-rose-300');
+      status.textContent = 'The administrator account could not be created. Please try again.';
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
+</script>
+</body></html>

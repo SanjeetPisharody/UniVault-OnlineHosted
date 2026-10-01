@@ -1,0 +1,134 @@
+/* Shared immersive shell for UniVault account and administration pages. */
+.atlas-subpage {
+    position: relative;
+    isolation: isolate;
+    overflow-x: hidden;
+    color: #e9edff;
+    background: #080c19 !important;
+    background-image: radial-gradient(ellipse at 8% 5%, rgb(91 76 218 / .2), transparent 34%), radial-gradient(ellipse at 92% 85%, rgb(24 174 189 / .12), transparent 36%), linear-gradient(155deg, #080c19, #0d1630 55%, #080c19) !important;
+}
+.atlas-subpage::before {
+    position: fixed;
+    z-index: -1;
+    inset: 0;
+    background-image: linear-gradient(rgb(138 158 255 / .035) 1px, transparent 1px), linear-gradient(90deg, rgb(138 158 255 / .035) 1px, transparent 1px);
+    background-size: 34px 34px;
+    mask-image: linear-gradient(transparent, #000 18%, #000 80%, transparent);
+    content: "";
+    pointer-events: none;
+}
+.atlas-subpage main { animation: atlasPageEnter .55s cubic-bezier(.2,.75,.25,1) both; }
+.atlas-subpage a { transition: color .18s ease, border-color .18s ease, background .18s ease, transform .18s ease; }
+.atlas-subpage button { transition: filter .18s ease, transform .18s ease, box-shadow .18s ease; }
+.atlas-subpage button:hover { filter: brightness(1.1); }
+.atlas-subpage button:active { transform: translateY(1px) scale(.99); }
+.atlas-auth-page .auth-shell, .atlas-password-page .auth-shell {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border: 1px solid rgb(157 153 255 / .25) !important;
+    border-radius: 1.8rem !important;
+    background: linear-gradient(135deg, rgb(14 21 46 / .98), rgb(12 18 37 / .98)) !important;
+    box-shadow: 0 35px 100px rgb(0 0 0 / .45), inset 0 1px 0 rgb(255 255 255 / .08) !important;
+}
+.atlas-auth-page .auth-shell > section:last-child { position: relative; z-index: 2; padding: clamp(1.5rem, 5vw, 3.2rem); background: linear-gradient(145deg, rgb(14 20 41 / .98), rgb(12 18 36 / .97)); }
+.atlas-auth-page .auth-art {
+    position: relative;
+    isolation: isolate;
+    min-height: 34rem;
+    overflow: hidden;
+    background: linear-gradient(145deg, #5342cf 0%, #293b94 48%, #126c81 100%) !important;
+}
+.atlas-auth-page .auth-art::before, .atlas-auth-page .auth-art::after {
+    position: absolute;
+    z-index: -1;
+    border: 1px solid rgb(230 236 255 / .22);
+    border-radius: 50%;
+    content: "";
+    pointer-events: none;
+}
+.atlas-auth-page .auth-art::before { top: 13%; right: -18%; width: 25rem; height: 25rem; box-shadow: 0 0 0 2rem rgb(215 230 255 / .035), 0 0 0 5rem rgb(215 230 255 / .028), inset 0 0 70px rgb(111 232 224 / .15); animation: authOrbit 24s linear infinite; }
+.atlas-auth-page .auth-art::after { right: 14%; bottom: 24%; width: 8rem; height: 8rem; border-color: rgb(148 234 233 / .48); background: radial-gradient(circle at 30% 25%, rgb(255 255 255 / .55), rgb(99 214 216 / .13) 35%, rgb(70 79 189 / .3) 70%); box-shadow: 0 0 55px rgb(76 212 218 / .3), inset -18px -15px 30px rgb(20 31 88 / .3); transform: rotateX(30deg) rotateY(-25deg); animation: atlasHover 6s ease-in-out infinite; }
+.atlas-auth-page .auth-art > * { position: relative; z-index: 1; }
+.atlas-auth-page .auth-art h1 { max-width: 22rem; color: #fff; font-size: clamp(2.25rem, 4vw, 3.2rem); letter-spacing: -.06em; line-height: 1.04; }
+.atlas-auth-page .auth-art p { color: rgb(233 239 255 / .84); }
+.atlas-auth-page .auth-art > a { color: white; font-size: 1.35rem; }
+.atlas-auth-page .auth-shell > section:last-child > a:first-child { color: #bfc7ff; }
+.atlas-subpage label { color: #d5ddf5; }
+.atlas-subpage input:not([type=hidden]) { border: 1px solid rgb(145 161 208 / .24) !important; border-radius: .85rem !important; color: #f2f5ff !important; background: rgb(5 10 24 / .55) !important; }
+.atlas-subpage input::placeholder { color: #8390b0; }
+.atlas-subpage input:focus { border-color: #857dff !important; box-shadow: 0 0 0 4px rgb(117 102 255 / .14) !important; }
+.atlas-subpage button[type=submit], .atlas-subpage form > button:not([type]) { border: 1px solid rgb(179 170 255 / .2); border-radius: .9rem; background-image: linear-gradient(105deg, #705cff, #5145c7 54%, #2785ae) !important; box-shadow: 0 12px 30px rgb(66 56 165 / .3), inset 0 1px 0 rgb(255 255 255 / .18); }
+.atlas-subpage button[type=submit]:hover { box-shadow: 0 16px 38px rgb(66 56 165 / .42); }
+.atlas-subpage .text-slate-900, .atlas-subpage .text-slate-800, .atlas-subpage .text-slate-700 { color: #eff2ff !important; }
+.atlas-subpage .text-slate-500, .atlas-subpage .text-slate-600, .atlas-subpage .text-slate-400 { color: #9eaaca !important; }
+.atlas-subpage .border-slate-200, .atlas-subpage .border-slate-300, .atlas-subpage .border-slate-700, .atlas-subpage .border-slate-800 { border-color: rgb(145 161 208 / .19) !important; }
+.atlas-register-page .register-shell, .atlas-profile-page main > section, .atlas-password-page .auth-shell {
+    border: 1px solid rgb(157 153 255 / .23) !important;
+    border-radius: 1.6rem !important;
+    background: linear-gradient(145deg, rgb(17 25 49 / .97), rgb(11 18 37 / .98)) !important;
+    box-shadow: 0 30px 85px rgb(0 0 0 / .37), inset 0 1px 0 rgb(255 255 255 / .07) !important;
+}
+.atlas-register-page .register-shell > a:first-child, .atlas-profile-page main > a:first-child, .atlas-password-page main > a:first-child { color: #b7b3ff !important; }
+.atlas-register-page h1, .atlas-profile-page h1, .atlas-password-page h1 { color: #f5f6ff !important; letter-spacing: -.045em; }
+.atlas-profile-page main > section { position: relative; overflow: hidden; }
+.atlas-profile-page main > section::before { position: absolute; top: -7rem; right: -6rem; width: 18rem; height: 18rem; border: 1px solid rgb(148 135 255 / .25); border-radius: 50%; box-shadow: 0 0 0 2rem rgb(148 135 255 / .035), 0 0 0 4rem rgb(148 135 255 / .025); content: ""; pointer-events: none; }
+.atlas-profile-page main > section > * { position: relative; }
+.atlas-profile-page details { border-color: rgb(251 113 133 / .25) !important; background: rgb(116 31 61 / .16) !important; }
+.atlas-profile-page details summary, .atlas-profile-page details label { color: #ffc7d5 !important; }
+.atlas-profile-page details input { background: #160c1b !important; }
+.profile-photo-frame { width: 7.5rem; height: 7.5rem; overflow: hidden; border: 4px solid rgb(129 140 248 / .32); border-radius: 50%; background: linear-gradient(145deg, #1b2850, #14213c); box-shadow: 0 12px 30px rgb(0 0 0 / .28); }
+.profile-photo-preview, .profile-photo-fallback { width: 100%; height: 100%; }
+.profile-photo-preview { display: block; object-fit: cover; }
+.profile-photo-fallback { display: flex; align-items: center; justify-content: center; color: #c7d2fe; font-size: 2rem; font-weight: 800; }
+.profile-photo-frame .is-hidden { display: none !important; }
+.profile-photo-form { width: min(100%, 25rem); margin-top: 1rem; text-align: center; }
+.profile-photo-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .65rem; }
+.profile-photo-file-input { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; clip-path: inset(50%) !important; white-space: nowrap !important; }
+.profile-photo-picker { display: inline-flex; min-height: 2.75rem; align-items: center; justify-content: center; padding: .65rem 1rem; border: 1px solid rgb(145 161 208 / .28); border-radius: .9rem; background: rgb(255 255 255 / .06); color: #e7eaff !important; font-size: .9rem; font-weight: 700; cursor: pointer; transition: background .15s ease, border-color .15s ease; }
+.profile-photo-picker:hover { background: rgb(255 255 255 / .12); border-color: rgb(167 160 255 / .55); }
+.profile-photo-file-input:focus-visible + .profile-photo-picker { outline: 3px solid rgb(129 140 248 / .65); outline-offset: 3px; }
+.profile-photo-controls button { min-height: 2.75rem; padding: .65rem 1rem; color: #fff; font-size: .9rem; font-weight: 700; }
+.profile-photo-controls button:disabled { cursor: not-allowed; opacity: .48; filter: saturate(.55); }
+.profile-photo-file-name { min-height: 1.25rem; margin-top: .65rem; overflow-wrap: anywhere; color: #e0e7ff; font-size: .82rem; }
+.profile-photo-help { margin-top: .35rem; color: #9eaaca; font-size: .75rem; line-height: 1.5; }
+.profile-photo-message { margin-top: .65rem; color: #a5f3cf; font-size: .85rem; }
+.profile-photo-message.is-error { color: #fda4af; }
+.profile-photo-message.is-success { color: #a5f3cf; }
+.atlas-admin-page main > div:first-child { padding-bottom: 1rem; border-bottom: 1px solid rgb(145 161 208 / .17); }
+.atlas-admin-page main h1 { color: #f3f5ff; letter-spacing: -.05em; }
+.atlas-admin-page main > div:nth-child(2) > div { border-color: rgb(145 161 208 / .19) !important; background: linear-gradient(145deg, rgb(23 32 62 / .95), rgb(13 21 42 / .97)) !important; box-shadow: inset 0 1px 0 rgb(255 255 255 / .05), 0 14px 35px rgb(0 0 0 / .17); }
+.atlas-admin-page main > div:nth-child(2) > div:nth-child(2) { background: linear-gradient(145deg, rgb(45 37 100 / .84), rgb(16 24 49 / .97)) !important; }
+.atlas-admin-page main > div:nth-child(2) > div:nth-child(3) { background: linear-gradient(145deg, rgb(16 68 83 / .7), rgb(13 21 42 / .97)) !important; }
+.atlas-admin-page main > div:nth-child(2) > div:nth-child(4) { background: linear-gradient(145deg, rgb(81 54 102 / .72), rgb(13 21 42 / .97)) !important; }
+.atlas-admin-page main > section { overflow: hidden; border: 1px solid rgb(145 161 208 / .18) !important; border-radius: 1.3rem !important; background: linear-gradient(145deg, rgb(17 25 49 / .96), rgb(11 18 37 / .98)) !important; box-shadow: 0 20px 50px rgb(0 0 0 / .2), inset 0 1px 0 rgb(255 255 255 / .04); }
+.atlas-admin-page main > section h2 { color: #eef1ff; letter-spacing: -.025em; }
+.atlas-admin-page th { color: #aab5d2; }
+.atlas-admin-page td { color: #d9e0f5; }
+.atlas-admin-page tr { border-color: rgb(145 161 208 / .13) !important; }
+.atlas-admin-page button { border-radius: .65rem; }
+.atlas-uploads-page main > a:first-child { color: #b7b3ff !important; }
+.atlas-uploads-page h1 { color: #f4f6ff; letter-spacing: -.05em; }
+.atlas-uploads-page article { border: 1px solid rgb(145 161 208 / .17); border-radius: 1rem; background: linear-gradient(145deg, rgb(19 28 54 / .95), rgb(11 18 37 / .98)); box-shadow: 0 12px 28px rgb(0 0 0 / .16); transition: transform .2s ease, border-color .2s ease; }
+.atlas-uploads-page article:hover { transform: translateY(-2px); border-color: rgb(137 125 255 / .44); }
+.atlas-uploads-page article h2 { color: #eff2ff; }
+.atlas-uploads-page article p { color: #9eaaca; }
+.atlas-subpage [role=alert], .atlas-subpage [role=status] { border-radius: .8rem; }
+@keyframes atlasPageEnter { from { opacity: 0; transform: translateY(12px) scale(.995); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes authOrbit { to { transform: rotate(360deg); } }
+@media (max-width: 767px) {
+    .atlas-auth-page { padding: .8rem !important; align-items: flex-start !important; }
+    .atlas-auth-page .auth-shell { grid-template-columns: 1fr; margin-block: .4rem; }
+    .atlas-auth-page .auth-art { min-height: 14rem; padding: 1.4rem !important; }
+    .atlas-auth-page .auth-art::before { top: -9rem; right: -7rem; width: 19rem; height: 19rem; }
+    .atlas-auth-page .auth-art::after { right: 9%; bottom: 14%; width: 4.5rem; height: 4.5rem; }
+    .atlas-auth-page .auth-art h1 { max-width: 17rem; margin-top: 1.3rem; font-size: 2rem; }
+    .atlas-auth-page .auth-art p:last-child { display: none; }
+    .atlas-auth-page .auth-shell > section:last-child { padding: 1.5rem !important; }
+    .atlas-admin-page main { padding: 1rem !important; }
+    .atlas-admin-page table { min-width: 42rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .atlas-subpage main, .atlas-subpage .auth-art::before, .atlas-subpage .auth-art::after { animation: none !important; }
+    .atlas-subpage *, .atlas-subpage *::before, .atlas-subpage *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
