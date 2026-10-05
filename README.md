@@ -2,6 +2,8 @@
 
 UniVault is a Flask portal for browsing, previewing, downloading, and sharing university study materials.
 
+🌐 **Live Website:** [Visit UniVault](https://univault-bfs0.onrender.com/)
+
 The application is deployed on Render with a stateless architecture backed by **Supabase PostgreSQL** (database) and **Supabase Storage** (uploaded PDFs and profile photos). Local development falls back to SQLite and the local filesystem automatically when the Supabase environment variables are not set.
 
 ## Features
